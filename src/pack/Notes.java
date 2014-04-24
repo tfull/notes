@@ -331,49 +331,6 @@ public class Notes{
         this.frame.setVisible(true);
     }
 
-    /*
-    private void changeTool(){
-        this.tools_index = (this.tools_index + 1) % this.tools.length;
-        Tool tl = this.tools[this.tools_index];
-        this.tool_switch.setText(tl.getToolName().name().toLowerCase());
-
-        this.font_size_field_validation = false;
-        this.font_size_field.setText(tl.getSize() + "pt");
-        this.font_size_field_validation = true;
-
-        if(tl.getToolName() == ToolName.PEN){
-            Color color = tl.getColor();
-            this.palette.setBackground(color);
-            boolean flag = false;
-
-            for(int i = 0; i < COLORS.length; i++){
-                if(COLORS[i].equals(color)){
-                    this.color_combo_validation = false;
-                    this.color_combo.setSelectedIndex(i);
-                    this.color_combo_validation = true;
-                    flag = true;
-                }
-            }
-
-            if(! flag){
-                this.color_combo_validation = false;
-                this.color_combo.setSelectedIndex(this.color_combo.getItemCount() - 1);
-                this.color_combo_validation = true;
-            }
-
-            this.color_field_validation = false;
-            this.color_field.setText(tl.getColorString());
-            this.color_field_validation = true;
-
-            this.color_combo.setEnabled(true);
-            this.color_field.setEditable(true);
-        }else{
-            this.color_combo.setEnabled(false);
-            this.color_field.setEditable(false);
-        }
-    }
-    */
-
     private void changeTool(int index){
         this.tools_index = index;
         Tool tl = this.tools[index];
@@ -559,13 +516,11 @@ public class Notes{
 
             try{
                 this.canvas = new Canvas(chooser.getSelectedFile(), new Dimension(A4WIDTH, A4HEIGHT), PAPER_COLOR);
-                // this.canvas = new Canvas();
                 this.canvas.setLocation(0, 0);
                 Paint paint = new Paint();
                 this.canvas.addMouseListener(paint);
                 this.canvas.addMouseMotionListener(paint);
                 this.canvas_panel.add(this.canvas);
-                //this.canvas.initialize(chooser.getSelectedFile(), new Dimension(A4WIDTH, A4HEIGHT), PAPER_COLOR);
                 this.canvas.repaint();
 
                 this.page_field_validation = false;
@@ -602,16 +557,17 @@ public class Notes{
         this.pages_label.setText(String.format(" / %d", this.canvas.getPageCount()));
     }
 
-    private void paintStart(Point p){
+    private void press(Point p){
         Tool t = this.tools[this.tools_index];
         if(t.getToolName() == ToolName.TEXT){
-            return;
+            this.canvas.putText(p, t, this.text_field.getText());
+            this.text_field.setText("");
+        }else{
+            this.canvas.paintStart(p, t);
         }
-
-        this.canvas.paintStart(p, t);
     }
 
-    private void paintLine(Point p){
+    private void drag(Point p){
         Tool t = this.tools[this.tools_index];
         if(t.getToolName() == ToolName.TEXT){
             return;
@@ -619,25 +575,6 @@ public class Notes{
 
         this.canvas.paintLine(p, t);
     }
-
-    private void putText(Point p){
-        Tool t = this.tools[this.tools_index];
-        if(t.getToolName() != ToolName.TEXT){
-            return;
-        }
-
-        this.canvas.putText(p, t, this.text_field.getText());
-        this.text_field.setText("");
-    }
-
-    /*
-    class ChangeTool implements ActionListener{
-        @Override
-        public void actionPerformed(ActionEvent e){
-            Notes.this.changeTool();
-        }
-    }
-    */
 
     class ChangeToPen implements ActionListener{
         @Override
@@ -761,17 +698,12 @@ public class Notes{
     class Paint extends MouseAdapter{
         @Override
         public void mousePressed(MouseEvent e){
-            Notes.this.paintStart(e.getPoint());
+            Notes.this.press(e.getPoint());
         }
 
         @Override
         public void mouseDragged(MouseEvent e){
-            Notes.this.paintLine(e.getPoint());
-        }
-
-        @Override
-        public void mouseClicked(MouseEvent e){
-            Notes.this.putText(e.getPoint());
+            Notes.this.drag(e.getPoint());
         }
     }
 }
