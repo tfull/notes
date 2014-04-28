@@ -225,6 +225,25 @@ public class Notes{
             this.panel.add(jp);
         }
 
+        // load
+        {
+            JPanel jp = new JPanel();
+            jp.setLayout(null);
+            jp.setSize(200, 30);
+            jp.setLocation(0, A4HEIGHT - 120);
+
+            Font font = new Font("Times New Roman", Font.PLAIN, 14);
+
+            JButton jb = new JButton("load");
+            jb.setFont(font);
+            jb.setSize(100, 30);
+            jb.setLocation(100, 0);
+            jb.addActionListener(new LoadImage());
+            jp.add(jb);
+
+            this.panel.add(jp);
+        }
+
         // page
         {
             JPanel jp = new JPanel();
@@ -557,6 +576,20 @@ public class Notes{
         this.pages_label.setText(String.format(" / %d", this.canvas.getPageCount()));
     }
 
+    private void loadImage(){
+        if(this.canvas == null){
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int selected = chooser.showOpenDialog(this.frame);
+
+        if(selected == JFileChooser.APPROVE_OPTION){
+            this.canvas.loadImage(chooser.getSelectedFile());
+        }
+    }
+
     private void press(Point p){
         Tool t = this.tools[this.tools_index];
         if(t.getToolName() == ToolName.TEXT){
@@ -692,6 +725,13 @@ public class Notes{
         @Override
         public void actionPerformed(ActionEvent e){
             Notes.this.deletePage();
+        }
+    }
+
+    class LoadImage implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e){
+            Notes.this.loadImage();
         }
     }
 

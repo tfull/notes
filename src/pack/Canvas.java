@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
 class Canvas extends JPanel{
@@ -27,27 +29,6 @@ class Canvas extends JPanel{
     private Point point;
     private String directory_name;
     private ArrayList<String> deleteds;
-
-    /*
-    public Canvas(Dimension d, Color color, Color background){
-        this.setSize(d);
-        this.setBackground(background);
-
-        this.background = background;
-
-        this.images = new ArrayList<BufferedImage>();
-        this.images_index = 0;
-
-        BufferedImage image = new BufferedImage(d.width, d.height, BufferedImage.TYPE_3BYTE_BGR);
-        Graphics2D g2d = (Graphics2D)image.getGraphics();
-
-        this.images.add(image);
-
-        g2d.setColor(background);
-        g2d.fillRect(0, 0, d.width, d.height);
-        g2d.dispose();
-    }
-    */
 
     public Canvas(File dir, Dimension dim, Color bg) throws IOException{
         if(! dir.isDirectory()){
@@ -145,6 +126,38 @@ class Canvas extends JPanel{
         g2d.drawString(string, p.x, p.y);
         this.repaint();
         g2d.dispose();
+    }
+
+    public void loadImage(File file){
+        BufferedImage img = this.pages.get(this.pages_index).getImage();
+        Graphics2D g2d = (Graphics2D)img.getGraphics();
+
+        try{
+            BufferedImage pic = ImageIO.read(file);
+
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(0, 0, img.getWidth(), img.getHeight());
+
+            if(img.getWidth() >= pic.getWidth() && img.getHeight() >= pic.getHeight()){
+                g2d.drawImage(pic, 0, 0, pic.getWidth(), pic.getHeight(), this);
+            }else{
+                double ratio;
+                double w = (double)img.getWidth() / (double)pic.getWidth();
+                double h = (double)img.getHeight() / (double)pic.getHeight();
+
+                ratio = Math.min(1.0, w);
+                ratio = Math.min(ratio, h);
+
+                int x = (int)((double)pic.getWidth() * ratio);
+                int y = (int)((double)pic.getHeight() * ratio);
+
+                g2d.drawImage(pic, 0, 0, x, y, this);
+            }
+
+            this.repaint();
+        }catch(IOException e){
+            System.err.println("[Error: loadImage()]");
+        }
     }
 
     public void previousPage(){
