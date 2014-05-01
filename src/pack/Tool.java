@@ -1,28 +1,31 @@
 package pack;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class Tool{
-    private ToolName tool_name;
-    private int default_size;
-    private int size;
-    private int minimum_size;
-    private int maximum_size;
-    private Color color;
+    protected int default_size;
+    protected int size;
+    protected int minimum_size;
+    protected int maximum_size;
+    protected Color color;
+    protected Point point;
 
-    public Tool(ToolName tool_name, int minimum_size, int maximum_size, int default_size, Color color){
-        this.tool_name = tool_name;
+    public Tool(int minimum_size, int maximum_size, int default_size){
+        this.minimum_size = minimum_size;
+        this.maximum_size = maximum_size;
+        this.default_size = default_size;
+        this.size = default_size;
+    }
+
+    public Tool(int minimum_size, int maximum_size, int default_size, Color color){
         this.minimum_size = minimum_size;
         this.maximum_size = maximum_size;
         this.default_size = default_size;
         this.size = default_size;
         this.color = color;
-    }
-
-    public ToolName getToolName(){
-        return this.tool_name;
     }
 
     public void setColor(Color color){
@@ -47,6 +50,14 @@ public class Tool{
 
     public String getColorString(){
         return String.format("#%02x%02x%02x", this.color.getRed(), this.color.getGreen(), this.color.getBlue());
+    }
+
+    public void setPoint(Point p){
+        this.point = p;
+    }
+
+    public Point getPoint(){
+        return this.point;
     }
 
     public void increaseSize(){

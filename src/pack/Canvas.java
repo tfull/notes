@@ -7,7 +7,10 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.MediaTracker;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.File;
@@ -20,13 +23,13 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 class Canvas extends JPanel{
     private ArrayList<Page> pages;
     private int pages_index;
     private Color background;
-    private Point point;
     private String directory_name;
     private ArrayList<String> deleteds;
 
@@ -83,81 +86,152 @@ class Canvas extends JPanel{
         g.drawImage(this.pages.get(this.pages_index).getImage(), 0, 0, this);
     }
 
-    public void paintStart(Point p, Tool tool){
+    public void paintStart(Point p, Pen pen){
         Page page = this.pages.get(this.pages_index);
         Graphics2D g2d = (Graphics2D)page.getImage().getGraphics();
 
-        if(tool.getToolName() == ToolName.PEN){
-            g2d.setColor(tool.getColor());
-        }else{
-            g2d.setColor(this.background);
-        }
-        g2d.setStroke(new BasicStroke((float)tool.getSize()));
+        g2d.setColor(pen.getColor());
+        g2d.setStroke(new BasicStroke((float)pen.getSize()));
         g2d.drawLine(p.x, p.y, p.x, p.y);
         this.repaint();
         g2d.dispose();
 
         page.change();
 
-        this.point = p;
+        pen.setPoint(p);
     }
 
-    public void paintLine(Point p, Tool tool){
-        Graphics2D g2d = (Graphics2D)this.pages.get(this.pages_index).getImage().getGraphics();
+    public void paintStart(Point p, Eraser eraser){
+        Page page = this.pages.get(this.pages_index);
+        Graphics2D g2d = (Graphics2D)page.getImage().getGraphics();
 
-        if(tool.getToolName() == ToolName.PEN){
-            g2d.setColor(tool.getColor());
-        }else{
-            g2d.setColor(this.background);
-        }
-        g2d.setStroke(new BasicStroke((float)tool.getSize()));
-        g2d.drawLine(this.point.x, this.point.y, p.x, p.y);
+        g2d.setColor(this.background);
+        g2d.setStroke(new BasicStroke((float)eraser.getSize()));
+        g2d.drawLine(p.x, p.y, p.x, p.y);
         this.repaint();
         g2d.dispose();
 
-        this.point = p;
+        page.change();
+
+        eraser.setPoint(p);
     }
 
-    public void putText(Point p, Tool tool, String string){
+    public void paintLine(Point p, Pen pen){
         Graphics2D g2d = (Graphics2D)this.pages.get(this.pages_index).getImage().getGraphics();
+        Point q = pen.getPoint();
 
-        g2d.setColor(tool.getColor());
-        g2d.setFont(new Font("Arial", Font.PLAIN, tool.getSize()));
-        g2d.drawString(string, p.x, p.y);
+        g2d.setColor(pen.getColor());
+        g2d.setStroke(new BasicStroke((float)pen.getSize()));
+        g2d.drawLine(q.x, q.y, p.x, p.y);
         this.repaint();
         g2d.dispose();
+
+        pen.setPoint(p);
+    }
+
+    public void paintLine(Point p, Eraser eraser){
+        Graphics2D g2d = (Graphics2D)this.pages.get(this.pages_index).getImage().getGraphics();
+        Point q = eraser.getPoint();
+
+        g2d.setColor(this.background);
+        g2d.setStroke(new BasicStroke((float)eraser.getSize()));
+        g2d.drawLine(q.x, q.y, p.x, p.y);
+        this.repaint();
+        g2d.dispose();
+
+        eraser.setPoint(p);
+    }
+
+    public void putText(Text text, String string){
+        Graphics2D g2d = (Graphics2D)this.pages.get(this.pages_index).getImage().getGraphics();
+        Point p = text.getPoint();
+
+        g2d.setColor(text.getColor());
+        g2d.setFont(new Font(text.getStyle(), Font.PLAIN, text.getSize()));
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        FontMetrics fm = g2d.getFontMetrics();
+        int h = fm.getHeight();
+
+        g2d.drawString(string, p.x, p.y + h);
+        this.repaint();
+        g2d.dispose();
+
+        text.setPoint(new Point(p.x, p.y + h));
     }
 
     public void loadImage(File file){
         BufferedImage img = this.pages.get(this.pages_index).getImage();
         Graphics2D g2d = (Graphics2D)img.getGraphics();
 
+        Image pic = new ImageIcon(file.getAbsolutePath()).getImage();
+
+        int img_w = img.getWidth();
+        int img_h = img.getHeight();
+        int pic_w = pic.getWidth(null);
+        int pic_h = pic.getHeight(null);
+
+        if(img_w >= pic_w && img_h >= pic_h){
+            g2d.drawImage(pic, (img_w  - pic_w) / 2, (img_h - pic_h) / 2, this);
+        }else{
+            Image new_pic;
+            double ratio_w = (double)img_w / (double)pic_w;
+            double ratio_h = (double)img_h / (double)pic_h;
+
+            if(ratio_w < ratio_h){
+                new_pic = pic.getScaledInstance(img_w, -1, Image.SCALE_SMOOTH);
+            }else{
+                new_pic = pic.getScaledInstance(-1, img_h, Image.SCALE_SMOOTH);
+            }
+
+            MediaTracker tracker = new MediaTracker(this);
+            tracker.addImage(new_pic, 0);
+            try{
+                tracker.waitForAll();
+                int new_w = new_pic.getWidth(null);
+                int new_h = new_pic.getHeight(null);
+
+                g2d.drawImage(new_pic, (img_w - new_w) / 2, (img_h - new_h) / 2, this);
+            }catch(InterruptedException e){
+                System.err.println("[Error: loadImage]");
+            }
+        }
+
+        this.repaint();
+
+        /*
         try{
             BufferedImage pic = ImageIO.read(file);
 
             g2d.setColor(Color.WHITE);
             g2d.fillRect(0, 0, img.getWidth(), img.getHeight());
 
-            if(img.getWidth() >= pic.getWidth() && img.getHeight() >= pic.getHeight()){
-                g2d.drawImage(pic, 0, 0, pic.getWidth(), pic.getHeight(), this);
+            int img_w = img.getWidth();
+            int img_h = img.getHeight();
+            int pic_w = pic.getWidth();
+            int pic_h = pic.getHeight();
+
+            if(imgw >= picw && imgh >= pich){
+                // g2d.drawImage(pic, 0, 0, picw, pich, this);
+                g2d.drawImage(pic, (imgw - picw) / 2, (imgh - pich) / 2, this);
             }else{
                 double ratio;
-                double w = (double)img.getWidth() / (double)pic.getWidth();
-                double h = (double)img.getHeight() / (double)pic.getHeight();
+                double w = (double)imgw / (double)picw;
+                double h = (double)imgh / (double)pich;
 
-                ratio = Math.min(1.0, w);
-                ratio = Math.min(ratio, h);
+                ratio = Math.min(w, h);
 
-                int x = (int)((double)pic.getWidth() * ratio);
-                int y = (int)((double)pic.getHeight() * ratio);
+                int x = (int)((double)picw * ratio);
+                int y = (int)((double)pich * ratio);
 
-                g2d.drawImage(pic, 0, 0, x, y, this);
+                g2d.drawImage(pic, (imgw - x)  / 2, (imgh - y) / 2, x, y, this);
             }
 
             this.repaint();
         }catch(IOException e){
             System.err.println("[Error: loadImage()]");
         }
+        */
     }
 
     public void previousPage(){
