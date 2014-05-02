@@ -84,9 +84,11 @@ public class Notes{
         Font font_l = new Font("Times New Roman", Font.PLAIN, 14);
         Font font_m = new Font("Times New Roman", Font.PLAIN, 12);
         Font font_s = new Font("Times New Roman", Font.PLAIN, 10);
+        Font font_nl = new Font(null, Font.PLAIN, 14);
+        Font font_nm = new Font(null, Font.PLAIN, 12);
 
         this.text_combo = new JComboBox();
-        this.text_combo.setFont(font_m);
+        this.text_combo.setFont(font_nm);
         for(String s : FONT_FAMILY){
             this.text_combo.addItem(s);
         }
@@ -267,7 +269,7 @@ public class Notes{
             jp.setLocation(0, 90);
 
             this.text_field = new JTextField("");
-            this.text_field.setFont(new Font("Arial", Font.PLAIN, 14));
+            this.text_field.setFont(font_nl);
             this.text_field.setSize(200, 30);
             this.text_field.setLocation(0, 0);
             this.text_field.addActionListener(new PutText());
